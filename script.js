@@ -65,12 +65,42 @@ function removeDestination(index) {
 function drawRoute() {
   if (polyline) map.removeLayer(polyline);
 
-  if (destinations.length < 2) return;
+  if (destinations.length < 2) {
+    document.getElementById("summary").innerHTML =
+      `<b>Total Stops:</b> ${destinations.length}`;
+    return;
+  }
 
   let points = destinations.map(d => [d.lat, d.lon]);
   polyline = L.polyline(points, { color: 'blue' }).addTo(map);
   map.fitBounds(polyline.getBounds());
 
-  document.getElementById("summary").innerHTML =
-    `<b>Total Stops:</b> ${destinations.length}`;
+  
+  let totalDistance = 0;
+
+  for (let i = 0; i < destinations.length - 1; i++) {
+    totalDistance += getDistance(
+      destinations[i].lat,
+      destinations[i].lon,
+      destinations[i + 1].lat,
+      destinations[i + 1].lon
+    );
+  }
+
+  document.getElementById("summary").innerHTML = `
+    <b>Total Stops:</b> ${destinations.length}<br>
+    <b>Total Distance:</b> ${totalDistance.toFixed(2)} km
+  `;
+}
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
