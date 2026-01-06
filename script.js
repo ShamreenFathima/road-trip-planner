@@ -1,7 +1,7 @@
 let map = L.map('map').setView([20.5937, 78.9629], 5);
 let destinations = JSON.parse(localStorage.getItem("trip")) || [];
 let markers = [];
-let polyline;
+let routingControl;
 
 // Map tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -23,8 +23,8 @@ function addDestination() {
 
       destinations.push({
         name: place,
-        lat: data[0].lat,
-        lon: data[0].lon
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon)
       });
 
       localStorage.setItem("trip", JSON.stringify(destinations));
@@ -61,46 +61,31 @@ function removeDestination(index) {
   updateUI();
 }
 
-// Draw route
+// Draw route with Leaflet Routing Machine
 function drawRoute() {
-  if (polyline) map.removeLayer(polyline);
+  if (routingControl) {
+    map.removeControl(routingControl);
+  }
 
   if (destinations.length < 2) {
     document.getElementById("summary").innerHTML =
-      `<b>Total Stops:</b> ${destinations.length}`;
+      `<b>Total Stops:</b> ${destinations.length}<br><b>Total Distance:</b> 0 km`;
     return;
   }
 
-  let points = destinations.map(d => [d.lat, d.lon]);
-  polyline = L.polyline(points, { color: 'blue' }).addTo(map);
-  map.fitBounds(polyline.getBounds());
+  routingControl = L.Routing.control({
+    waypoints: destinations.map(d => L.latLng(d.lat, d.lon)),
+    routeWhileDragging: false,
+    show: false
+  }).addTo(map);
 
-  
-  let totalDistance = 0;
-
-  for (let i = 0; i < destinations.length - 1; i++) {
-    totalDistance += getDistance(
-      destinations[i].lat,
-      destinations[i].lon,
-      destinations[i + 1].lat,
-      destinations[i + 1].lon
-    );
-  }
-
-  document.getElementById("summary").innerHTML = `
-    <b>Total Stops:</b> ${destinations.length}<br>
-    <b>Total Distance:</b> ${totalDistance.toFixed(2)} km
-  `;
+  routingControl.on('routesfound', function(e) {
+    let route = e.routes[0];
+    let totalDistance = (route.summary.totalDistance / 1000).toFixed(2); // km
+    document.getElementById("summary").innerHTML = `
+      <b>Total Stops:</b> ${destinations.length}<br>
+      <b>Total Distance:</b> ${totalDistance} km
+    `;
+  });
 }
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+
