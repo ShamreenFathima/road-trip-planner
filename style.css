@@ -57,9 +57,10 @@ li {
 
 #map {
   width: 65%;
+  height: 100%;
 }
 
-/* 📱 Mobile */
+/* Mobile */
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
@@ -69,4 +70,6 @@ li {
     width: 100%;
     height: 50vh;
   }
+}
+
 }
