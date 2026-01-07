@@ -1,25 +1,31 @@
-let map = L.map('map').setView([20.5937, 78.9629], 5);
-let destinations = JSON.parse(localStorage.getItem("trip")) || [];
+let map = L.map('map').setView([20.5937, 78.9629], 6);
+let destinations = [];
 let markers = [];
-let routingControl;
+let mainRouteControl = null;
+let altRouteControls = [];
 
-// Map tiles
+/* Map tiles */
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Load stored data
-updateUI();
-
-// Add destination
+/* Add destination */
 function addDestination() {
   const place = document.getElementById("place").value;
   if (!place) return;
 
+  if (destinations.length === 2) {
+    alert("Only FROM and TO locations are allowed");
+    return;
+  }
+
   fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${place}`)
     .then(res => res.json())
     .then(data => {
-      if (data.length === 0) return alert("Place not found");
+      if (!data.length) {
+        alert("Place not found");
+        return;
+      }
 
       destinations.push({
         name: place,
@@ -27,65 +33,97 @@ function addDestination() {
         lon: parseFloat(data[0].lon)
       });
 
-      localStorage.setItem("trip", JSON.stringify(destinations));
       document.getElementById("place").value = "";
       updateUI();
     });
 }
 
-// Update UI
+/* Update UI */
 function updateUI() {
   document.getElementById("destinationList").innerHTML = "";
+
   markers.forEach(m => map.removeLayer(m));
   markers = [];
 
   destinations.forEach((d, i) => {
     let li = document.createElement("li");
-    li.innerHTML = `
-      ${i + 1}. ${d.name}
-      <button onclick="removeDestination(${i})">❌</button>
-    `;
+
+    let span = document.createElement("span");
+    span.innerText = `${i + 1}. ${d.name}`;
+
+    let btn = document.createElement("button");
+    btn.innerText = "❌";
+    btn.className = "delete-btn";
+    btn.onclick = () => removeDestination(i);
+
+    li.appendChild(span);
+    li.appendChild(btn);
     document.getElementById("destinationList").appendChild(li);
 
     let marker = L.marker([d.lat, d.lon]).addTo(map);
     markers.push(marker);
   });
 
-  drawRoute();
+  drawRoutes();
 }
 
-// Remove destination
+/* Remove destination */
 function removeDestination(index) {
   destinations.splice(index, 1);
-  localStorage.setItem("trip", JSON.stringify(destinations));
   updateUI();
 }
 
-// Draw route with Leaflet Routing Machine
-function drawRoute() {
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
+/* Draw main + alternative routes */
+function drawRoutes() {
+  // Remove existing routes
+  if (mainRouteControl) map.removeControl(mainRouteControl);
+  altRouteControls.forEach(ctrl => map.removeControl(ctrl));
+  altRouteControls = [];
 
   if (destinations.length < 2) {
     document.getElementById("summary").innerHTML =
-      `<b>Total Stops:</b> ${destinations.length}<br><b>Total Distance:</b> 0 km`;
+      `<b>Total Stops:</b> ${destinations.length}`;
     return;
   }
 
-  routingControl = L.Routing.control({
-    waypoints: destinations.map(d => L.latLng(d.lat, d.lon)),
+  // Main route in red
+  mainRouteControl = L.Routing.control({
+    waypoints: [
+      L.latLng(destinations[0].lat, destinations[0].lon),
+      L.latLng(destinations[1].lat, destinations[1].lon)
+    ],
     routeWhileDragging: false,
-    show: false
+    show: false,
+    addWaypoints: false,
+    draggableWaypoints: false,
+    lineOptions: { styles: [{ color: 'red', weight: 6 }] },
+    createMarker: () => null,
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'driving',
+      alternatives: true // fetch alternative routes
+    })
   }).addTo(map);
 
-  routingControl.on('routesfound', function(e) {
-    let route = e.routes[0];
-    let totalDistance = (route.summary.totalDistance / 1000).toFixed(2); // km
+  mainRouteControl.on('routesfound', function(e) {
+    const route = e.routes[0];
+    const distanceKm = (route.summary.totalDistance / 1000).toFixed(2);
     document.getElementById("summary").innerHTML = `
-      <b>Total Stops:</b> ${destinations.length}<br>
-      <b>Total Distance:</b> ${totalDistance} km
+      <b>From:</b> ${destinations[0].name}<br>
+      <b>To:</b> ${destinations[1].name}<br>
+      <b>Distance:</b> ${distanceKm} km
     `;
+
+    // Draw alternative routes in purple
+    e.routes.slice(1).forEach(alt => {
+      const altLine = L.Routing.line(alt, {
+        styles: [{ color: 'purple', weight: 4 }]
+      }).addTo(map);
+      altRouteControls.push(L.Routing.control({ addWaypoints: false }).addTo(map));
+      map.removeControl(altRouteControls[altRouteControls.length-1]); // only keep line
+    });
   });
+ 
 }
+
 
