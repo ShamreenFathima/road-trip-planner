@@ -5,7 +5,7 @@ body {
 }
 
 header {
-  background: rgb(26, 226, 199);
+ background: lightskyblue;
   color: rgb(246, 247, 244);
   text-align: center;
   padding: 12px;
@@ -34,7 +34,7 @@ input, button {
 }
 
 button {
-  background: #b5e93e;
+ background:yellowgreen;
   color: white;
   border: none;
   cursor: pointer;
@@ -78,6 +78,7 @@ li {
 
  
 }
+
 
 
 
