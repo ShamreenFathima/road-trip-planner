@@ -5,34 +5,26 @@
   <title>Road Trip Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
-  <!-- Routing Machine CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <header>
   <h1>🚗 Road Trip Planner</h1>
-  <p>Plan your journey with real routes</p>
+  <p>Plan your journey with real routes and distances</p>
 </header>
 
 <div class="container">
-
   <div class="panel">
     <input id="place" placeholder="Enter From / To location">
     <button onclick="addDestination()">Add Location</button>
-   
+
     <ul id="destinationList"></ul>
     <div id="summary"></div>
-    
   </div>
 
   <div id="map"></div>
-
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -41,36 +33,6 @@
 
 </body>
 </html>
-
-<header>
-  <h1>🚗 Road Trip Planner</h1>
-  <p>Plan, reorder and visualize your journey</p>
-</header>
-
-<div class="container">
-  <!-- Form -->
-  <div class="panel">
-    <h2>Add Destination</h2>
-    <input type="text" id="place" placeholder="Enter destination">
-    <button onclick="addDestination()">Add</button>
-
-    <h3>Your Destinations</h3>
-    <ul id="destinationList"></ul>
-
-    <div class="summary" id="summary"></div>
-  </div>
-
-  <!-- Map -->
-  <div id="map"></div>
-</div>
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<!-- Leaflet Routing Machine JS -->
-<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
-<script src="script.js"></script>
-
-</body>
-</html>
   
+
 
