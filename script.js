@@ -85,28 +85,43 @@ function drawRoute() {
     return;
   }
 
-  routingControl = L.Routing.control({
+  // Main route in red
+  mainRouteControl = L.Routing.control({
     waypoints: [
       L.latLng(destinations[0].lat, destinations[0].lon),
       L.latLng(destinations[1].lat, destinations[1].lon)
     ],
     routeWhileDragging: false,
-    show: true,
+    show: false,
     addWaypoints: false,
     draggableWaypoints: false,
-    lineOptions: {
-      styles: [
-        { color: 'red', weight: 6 },      // main route
-        { color: 'purple', weight: 4 }    // alternative routes
-      ]
-    },
-    createMarker: function(i, wp) {
-      return L.marker(wp.latLng, { title: destinations[i].name });
-    },
+    lineOptions: { styles: [{ color: 'red', weight: 6 }] },
+    createMarker: () => null,
     router: L.Routing.osrmv1({
-      serviceUrl: 'https://router.project-osrm.org/route/v1'
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'driving',
+      alternatives: true // fetch alternative routes
     })
   }).addTo(map);
+
+  mainRouteControl.on('routesfound', function(e) {
+    const route = e.routes[0];
+    const distanceKm = (route.summary.totalDistance / 1000).toFixed(2);
+    document.getElementById("summary").innerHTML = `
+      <b>From:</b> ${destinations[0].name}<br>
+      <b>To:</b> ${destinations[1].name}<br>
+      <b>Distance:</b> ${distanceKm} km
+    `;
+
+    // Draw alternative routes in purple
+    e.routes.slice(1).forEach(alt => {
+      const altLine = L.Routing.line(alt, {
+        styles: [{ color: 'purple', weight: 4 }]
+      }).addTo(map);
+      altRouteControls.push(L.Routing.control({ addWaypoints: false }).addTo(map));
+      map.removeControl(altRouteControls[altRouteControls.length-1]); // only keep line
+    });
+  });
 
   routingControl.on('routesfound', function(e) {
     const summary = e.routes[0].summary;
@@ -121,6 +136,7 @@ function drawRoute() {
     `;
   });
 }
+
 
 
 
