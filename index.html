@@ -5,34 +5,42 @@
   <title>Road Trip Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
   <h1>🚗 Road Trip Planner</h1>
-  <p>Plan your journey with real routes and distances</p>
+  <p>Plan your journey with main and alternative routes</p>
 </header>
 
 <div class="container">
+
   <div class="panel">
     <input id="place" placeholder="Enter From / To location">
     <button onclick="addDestination()">Add Location</button>
 
     <ul id="destinationList"></ul>
+
     <div id="summary"></div>
+    <p>🧭 North is Up</p>
   </div>
 
   <div id="map"></div>
+
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 <script src="script.js"></script>
-
 </body>
 </html>
   
+
 
 
