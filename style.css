@@ -36,7 +36,6 @@ button {
   background: #e63946;
   color: white;
   border: none;
-  cursor: pointer;
 }
 
 ul {
@@ -51,6 +50,7 @@ li {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 4px;
 }
 
 .delete-btn {
@@ -74,5 +74,6 @@ li {
     height: 50vh;
   }
 }
+
 
 
