@@ -1,8 +1,8 @@
 let map = L.map('map').setView([20.5937, 78.9629], 6);
 let destinations = [];
 let markers = [];
-let mainRoute = null;
-let altRoute = null;
+let mainRouteControl = null;
+let altRouteControls = [];
 
 /* Map tiles */
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -15,14 +15,17 @@ function addDestination() {
   if (!place) return;
 
   if (destinations.length === 2) {
-    alert("Only FROM and TO locations allowed");
+    alert("Only FROM and TO locations are allowed");
     return;
   }
 
   fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${place}`)
     .then(res => res.json())
     .then(data => {
-      if (!data.length) return alert("Place not found");
+      if (!data.length) {
+        alert("Place not found");
+        return;
+      }
 
       destinations.push({
         name: place,
@@ -38,18 +41,22 @@ function addDestination() {
 /* Update UI */
 function updateUI() {
   document.getElementById("destinationList").innerHTML = "";
+
   markers.forEach(m => map.removeLayer(m));
   markers = [];
 
   destinations.forEach((d, i) => {
     let li = document.createElement("li");
-    li.innerText = `${i + 1}. ${d.name}`;
+
+    let span = document.createElement("span");
+    span.innerText = `${i + 1}. ${d.name}`;
 
     let btn = document.createElement("button");
     btn.innerText = "❌";
     btn.className = "delete-btn";
     btn.onclick = () => removeDestination(i);
 
+    li.appendChild(span);
     li.appendChild(btn);
     document.getElementById("destinationList").appendChild(li);
 
@@ -66,10 +73,12 @@ function removeDestination(index) {
   updateUI();
 }
 
-/* Draw main + alternative routes (simulated) */
+/* Draw main + alternative routes */
 function drawRoutes() {
-  if (mainRoute) map.removeControl(mainRoute);
-  if (altRoute) map.removeControl(altRoute);
+  // Remove existing routes
+  if (mainRouteControl) map.removeControl(mainRouteControl);
+  altRouteControls.forEach(ctrl => map.removeControl(ctrl));
+  altRouteControls = [];
 
   if (destinations.length < 2) {
     document.getElementById("summary").innerHTML =
@@ -77,41 +86,46 @@ function drawRoutes() {
     return;
   }
 
-  // MAIN ROUTE
-  mainRoute = L.Routing.control({
+  // Main route in red
+  mainRouteControl = L.Routing.control({
     waypoints: [
       L.latLng(destinations[0].lat, destinations[0].lon),
       L.latLng(destinations[1].lat, destinations[1].lon)
     ],
     routeWhileDragging: false,
+    show: false,
     addWaypoints: false,
     draggableWaypoints: false,
     lineOptions: { styles: [{ color: 'red', weight: 6 }] },
-    createMarker: () => null
+    createMarker: () => null,
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'driving',
+      alternatives: true // fetch alternative routes
+    })
   }).addTo(map);
 
-  // ALTERNATIVE ROUTE (simulated: offset slightly)
-  altRoute = L.Routing.control({
-    waypoints: [
-      L.latLng(destinations[0].lat + 0.05, destinations[0].lon + 0.05),
-      L.latLng(destinations[1].lat + 0.05, destinations[1].lon - 0.05)
-    ],
-    routeWhileDragging: false,
-    addWaypoints: false,
-    draggableWaypoints: false,
-    lineOptions: { styles: [{ color: 'purple', weight: 4 }] },
-    createMarker: () => null
-  }).addTo(map);
-
-  mainRoute.on('routesfound', function(e) {
-    const distanceKm = (e.routes[0].summary.totalDistance / 1000).toFixed(2);
+  mainRouteControl.on('routesfound', function(e) {
+    const route = e.routes[0];
+    const distanceKm = (route.summary.totalDistance / 1000).toFixed(2);
     document.getElementById("summary").innerHTML = `
       <b>From:</b> ${destinations[0].name}<br>
       <b>To:</b> ${destinations[1].name}<br>
       <b>Distance:</b> ${distanceKm} km
     `;
+
+    // Draw alternative routes in purple
+    e.routes.slice(1).forEach(alt => {
+      const altLine = L.Routing.line(alt, {
+        styles: [{ color: 'purple', weight: 4 }]
+      }).addTo(map);
+      altRouteControls.push(L.Routing.control({ addWaypoints: false }).addTo(map));
+      map.removeControl(altRouteControls[altRouteControls.length-1]); // only keep line
+    });
   });
+ 
 }
+
 
 
 
